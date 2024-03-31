@@ -295,16 +295,14 @@ class Trainer(object):
         lr_factor = [lr_factor[idx] for idx in np.argsort(order)]
 
         if len(no_group_params) > 0:
-            #import torch.distributed as dist
-            #if dist.get_rank() == 0:
-            #    import ipdb; 
-            #    ipdb.set_trace()
-            #params.append(no_group_params)
-            #lr_factor.append(1)
-            #order.append(max(order)+1 if len(order) > 0 else 1)
-            logger.warning("Merging no_group_params to group number 1")
-            print(order)
-            params[0] += no_group_params
+            if len(params) > 0:
+                logger.warning("Merging no_group_params to group number 1")
+                print(order)
+                params[0] += no_group_params
+            else:
+                params.append(no_group_params)
+                lr_factor.append(1)
+                order.append(max(order)+1 if len(order) > 0 else 1)
 
         self._optimizer = []
         self._lr_scheduler = []

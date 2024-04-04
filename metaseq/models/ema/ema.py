@@ -158,6 +158,10 @@ class EMA(object):
                     param.float().clone() if param.ndim == 1 else copy.deepcopy(param)
                 )
 
+            if ema_param.dtype == torch.int64:
+                # Skip if the parameter is not a real weight
+                continue
+
             if param.shape != ema_param.shape:
                 raise ValueError(
                     "incompatible tensor shapes between model param and ema param"

@@ -509,6 +509,8 @@ def load_checkpoint_to_cpu(path, arg_overrides=None, load_on_all_ranks=False) ->
             state = _merge_flat_fsdp_shards([torch_load_cpu(f) for f in paths_to_load])
         elif world_size == ddp_checkpoint_files_count:
             state = torch_load_cpu(paths_to_load[0])
+        elif ddp_checkpoint_files_count == 1 and "shard" not in paths_to_load[0]:
+            state = torch_load_cpu(paths_to_load[0])
         else:
             shard_ids = []
             states = []
@@ -646,7 +648,7 @@ def _upgrade_state_dict(state):
     # convert to multiple optimizers format
     if 'last_optimizer_state' in state and not isinstance(state['last_optimizer_state'], list):
         state['last_optimizer_state'] = [state['last_optimizer_state']]
-    if 'optimizer_history' in state:
+    if 'optimizer_history' in state and type(state['optimizer_history'][-1]) is not list:
         state['optimizer_history'] = [state['optimizer_history']]
     # add optimizer_history
     if "optimizer_history" not in state:

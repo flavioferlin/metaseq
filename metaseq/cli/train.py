@@ -159,7 +159,7 @@ def main(cfg: DictConfig) -> None:
         orig_memory_efficient_fp16 = cfg.distributed_training.memory_efficient_fp16
         orig_fp32_reduce_scatter = cfg.distributed_training.fp32_reduce_scatter
         # Clobber memory_efficient_fp16 and fp32_reduce_scatter
-        cfg.distributed_training.memory_efficient_fp16 = cfg.distributed_training.fp16
+        #cfg.distributed_training.memory_efficient_fp16 = cfg.distributed_training.fp16
         cfg.distributed_training.fp32_reduce_scatter = not cfg.distributed_training.fp16
 
         with fsdp_enable_wrap(

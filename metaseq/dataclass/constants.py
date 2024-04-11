@@ -49,6 +49,7 @@ TASK_DDP_BACKEND_CHOICES = ChoiceEnum(
     [
         "none",  # default
         "fully_sharded",  # FSDP wraps task. See https://github.com/facebookresearch/metaseq/pull/668/
+        "pytorch_ddp",
     ]
 )
 DATASET_IMPL_CHOICES = ChoiceEnum(["raw", "lazy", "cached", "mmap", "fasta"])

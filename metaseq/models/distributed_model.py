@@ -25,7 +25,7 @@ except ImportError:
     _GOSSIP_DISABLED = True
 
 
-def DistributedModel(args, model, process_group, device):
+def DistributedModel(args, model, process_group, device, ddp_backend=None):
     """
     Wrap a *model* to support distributed data parallel training.
 
@@ -41,8 +41,11 @@ def DistributedModel(args, model, process_group, device):
             parallel all-reduction.
         device: device to move model to
     """
+    if ddp_backend is None:
+        ddp_backend = args.ddp_backend
+
     assert isinstance(model, nn.Module)
-    if args.ddp_backend in {"c10d", "pytorch_ddp"}:
+    if ddp_backend in {"c10d", "pytorch_ddp"}:
         wrapped_model = DistributedDataParallel(
             module=model.to(device),
             device_ids=[args.device_id],
@@ -54,7 +57,7 @@ def DistributedModel(args, model, process_group, device):
         )
         # forward missing getattr and state_dict/load_state_dict to orig model
         wrapped_model = ModuleProxyWrapper(wrapped_model)
-    elif args.ddp_backend in {"no_c10d", "legacy_ddp"}:
+    elif ddp_backend in {"no_c10d", "legacy_ddp"}:
         wrapped_model = LegacyDistributedDataParallel(
             module=model.to(device),
             buffer_size=2**28,
@@ -62,7 +65,7 @@ def DistributedModel(args, model, process_group, device):
         )
         # forward missing getattr and state_dict/load_state_dict to orig model
         wrapped_model = ModuleProxyWrapper(wrapped_model)
-    elif args.ddp_backend == "fully_sharded":
+    elif ddp_backend == "fully_sharded":
         try:
             from fairscale.nn.data_parallel import FullyShardedDataParallel as FSDP
         except ImportError:
@@ -80,6 +83,6 @@ def DistributedModel(args, model, process_group, device):
         if not args.cpu_offload:
             wrapped_model = wrapped_model.to(device=device)
     else:
-        raise ValueError("Unknown --ddp-backend: " + args.ddp_backend)
+        raise ValueError("Unknown --ddp-backend: " + ddp_backend)
 
     return wrapped_model

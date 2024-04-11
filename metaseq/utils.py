@@ -357,7 +357,7 @@ def has_parameters(module):
 
 def has_trainable_parameters(module):
     try:
-        if next(module.parameters()).requires_grad:
+        if any([p.requires_grad for p in module.parameters()]):
             return True
     except StopIteration:
         return False

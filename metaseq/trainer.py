@@ -212,6 +212,7 @@ class Trainer(object):
                     self._criterion,
                     process_group=self.data_parallel_process_group,
                     device=self.device,
+                    ddp_backend=self.cfg.distributed_training.criterion_ddp_backend
                 )
             else:
                 self._wrapped_criterion = self._criterion
@@ -283,19 +284,20 @@ class Trainer(object):
         params = []
         lr_factor = []
         order = []
-        groups = set([p.param_group for p in self.model.parameters() if hasattr(p, "param_group") and p.requires_grad])
+        from itertools import chain
+        groups = set([p.param_group for p in chain(self.model.parameters(), self.criterion.parameters()) if hasattr(p, "param_group") and p.requires_grad])
         for group in groups:
-            group_params = [p for p in self.model.parameters() if hasattr(p, "param_group") and p.param_group == group and p.requires_grad]
+            group_params = [p for p in chain(self.model.parameters(), self.criterion.parameters()) if hasattr(p, "param_group") and p.param_group == group and p.requires_grad]
             params.append(group_params)
             lr_factor.append(float(group[group.index('_')+1:]))
             order.append(int(group[group.index('group')+5:group.index('_')]))
-        no_group_params = [p for p in self.model.parameters() if not hasattr(p, "param_group") and p.requires_grad]
+        no_group_params = [p for p in chain(self.model.parameters(), self.criterion.parameters()) if not hasattr(p, "param_group") and p.requires_grad]
         
         params = [params[idx] for idx in np.argsort(order)]
         lr_factor = [lr_factor[idx] for idx in np.argsort(order)]
 
         if len(no_group_params) > 0:
-            if len(params) > 0:
+            if len(params) > 1:
                 logger.warning("Merging no_group_params to group number 1")
                 print(order)
                 params[0] += no_group_params
